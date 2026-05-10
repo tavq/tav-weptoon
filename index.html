@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>웹툰</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    color: #111;
+  }
+
+  .wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+  }
+
+  /* === 플레이어 영역 === */
+  .player-section {
+    padding: 56px 24px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+  }
+
+  .player {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .progress-container {
+    width: 100%;
+    cursor: pointer;
+    padding: 8px 0;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: #e5e5e5;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: #111;
+    border-radius: 2px;
+    transition: width 0.1s linear;
+  }
+
+  .time-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #888;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+  }
+
+  .ctrl-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    color: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+  }
+
+  .ctrl-btn:hover { opacity: 0.55; }
+  .ctrl-btn:active { transform: scale(0.9); }
+
+  .ctrl-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #111;
+  }
+
+  .ctrl-btn.play-btn svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .play-btn.playing .icon-play { display: none; }
+  .play-btn:not(.playing) .icon-pause { display: none; }
+
+  .player-caption {
+    margin-top: 28px;
+    font-size: 12.5px;
+    color: #999;
+    letter-spacing: 0.03em;
+    text-align: center;
+  }
+
+  .player-caption .note-icon {
+    margin-left: 3px;
+    color: #555;
+  }
+
+  /* === 캐릭터 보이스 아코디언 === */
+  .voice-section {
+    width: 100%;
+    max-width: 420px;
+    margin: 28px auto 0;
+  }
+
+  .voice-toggle {
+    width: 100%;
+    background: none;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    color: #333;
+    letter-spacing: 0.03em;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .voice-toggle:hover {
+    background: #fafafa;
+    border-color: #ccc;
+  }
+
+  .voice-toggle-icon {
+    width: 12px;
+    height: 12px;
+    fill: #666;
+    transition: transform 0.3s ease;
+  }
+
+  .voice-toggle.open .voice-toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  /* 펼쳐지는 영역 */
+  .voice-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+
+  .voice-panel.open {
+    max-height: 1000px;
+  }
+
+  .voice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 14px 0 4px;
+  }
+
+  .voice-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border: 1px solid #ececec;
+    border-radius: 4px;
+    background: #fff;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .voice-card:hover {
+    background: #fafafa;
+    border-color: #d8d8d8;
+  }
+
+  .voice-name {
+    font-size: 13px;
+    color: #222;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+
+  .voice-play {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+  }
+
+  .voice-play:hover { opacity: 0.55; }
+  .voice-play:active { transform: scale(0.88); }
+
+  .voice-play svg {
+    width: 18px;
+    height: 18px;
+    fill: #111;
+  }
+
+  .voice-play.playing .icon-play { display: none; }
+  .voice-play:not(.playing) .icon-pause { display: none; }
+
+  /* 구분선 */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: #eee;
+    margin-top: 44px;
+  }
+
+  /* 웹툰 이미지 */
+  .webtoon-container {
+    display: block;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .webtoon-container img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    vertical-align: top;
+  }
+
+  /* 모바일 대응 */
+  @media (max-width: 480px) {
+    .voice-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrapper">
+
+    <!-- 플레이어 섹션 -->
+    <section class="player-section">
+
+      <!-- 주크박스 -->
+      <div class="player">
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <div class="time-row">
+          <span id="currentTime">0:00</span>
+          <span id="duration">0:00</span>
+        </div>
+
+        <div class="controls">
+          <button class="ctrl-btn" aria-label="반복">
+            <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+          </button>
+          <button class="ctrl-btn" aria-label="처음으로" id="prevBtn">
+            <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button class="ctrl-btn play-btn" aria-label="재생/일시정지" id="playBtn">
+            <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+          </button>
+          <button class="ctrl-btn" aria-label="끝으로" id="nextBtn">
+            <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+          </button>
+          <button class="ctrl-btn" aria-label="셔플">
+            <svg viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+          </button>
+        </div>
+
+        <p class="player-caption">나레이션과 함께 듣기<span class="note-icon">♪</span></p>
+      </div>
+
+      <!-- 캐릭터 보이스 아코디언 -->
+      <div class="voice-section">
+        <button class="voice-toggle" id="voiceToggle" aria-expanded="false">
+          <span>출연 인물 목소리 샘플</span>
+          <svg class="voice-toggle-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5H7z"/></svg>
+        </button>
+
+        <div class="voice-panel" id="voicePanel">
+          <div class="voice-grid">
+            <!-- 캐릭터 카드 6개 -->
+            <div class="voice-card">
+              <span class="voice-name">닉스</span>
+              <button class="voice-play" data-src="voices/nyx.wav" aria-label="닉스 목소리 재생">
+                <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+              </button>
+            </div>
+
+            <div class="voice-card">
+              <span class="voice-name">모르가나</span>
+              <button class="voice-play" data-src="voices/morgana.wav" aria-label="모르가나 목소리 재생">
+                <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+              </button>
+            </div>
+
+            <div class="voice-card">
+              <span class="voice-name">티라</span>
+              <button class="voice-play" data-src="voices/tira.wav" aria-label="티라 목소리 재생">
+                <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+              </button>
+            </div>
+
+            <div class="voice-card">
+              <span class="voice-name">키키</span>
+              <button class="voice-play" data-src="voices/kiki.wav" aria-label="키키 목소리 재생">
+                <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+              </button>
+            </div>
+
+            <div class="voice-card">
+              <span class="voice-name">알테아</span>
+              <button class="voice-play" data-src="voices/althea.wav" aria-label="알테아 목소리 재생">
+                <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+              </button>
+            </div>
+
+            <div class="voice-card">
+              <span class="voice-name">리넷</span>
+              <button class="voice-play" data-src="voices/lynette.wav" aria-label="리넷 목소리 재생">
+                <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- 웹툰 이미지 -->
+    <div class="webtoon-container">
+      <img src="images/01.webp" alt="웹툰 1" width="1200" height="5295">
+      <img src="images/02.webp" alt="웹툰 2" width="1200" height="5185">
+      <img src="images/03.webp" alt="웹툰 3" width="1200" height="5765">
+      <img src="images/04.webp" alt="웹툰 4" width="1200" height="4364">
+    </div>
+
+  </div>
+
+  <!-- 메인 BGM (나레이션) - 한 번만 재생 -->
+  <audio id="bgm" preload="metadata">
+    <source src="bgm/bgm.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- 캐릭터 보이스용 오디오 (공용) -->
+  <audio id="voiceAudio" preload="none"></audio>
+
+  <script>
+    /* ===== 메인 BGM ===== */
+    const bgm = document.getElementById('bgm');
+    const playBtn = document.getElementById('playBtn');
+    const progressFill = document.getElementById('progressFill');
+    const progressContainer = document.getElementById('progressContainer');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function formatTime(sec) {
+      if (isNaN(sec) || !isFinite(sec)) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    bgm.addEventListener('loadedmetadata', () => {
+      durationEl.textContent = formatTime(bgm.duration);
+    });
+
+    bgm.addEventListener('timeupdate', () => {
+      const percent = (bgm.currentTime / bgm.duration) * 100;
+      progressFill.style.width = `${percent}%`;
+      currentTimeEl.textContent = formatTime(bgm.currentTime);
+    });
+
+    playBtn.addEventListener('click', () => {
+      if (bgm.paused) {
+        bgm.play().then(() => {
+          playBtn.classList.add('playing');
+        }).catch(err => console.error('BGM 재생 실패:', err));
+      } else {
+        bgm.pause();
+        playBtn.classList.remove('playing');
+      }
+    });
+
+    progressContainer.addEventListener('click', (e) => {
+      const rect = progressContainer.getBoundingClientRect();
+      const percent = (e.clientX - rect.left) / rect.width;
+      if (isFinite(bgm.duration)) {
+        bgm.currentTime = percent * bgm.duration;
+      }
+    });
+
+    prevBtn.addEventListener('click', () => { bgm.currentTime = 0; });
+    nextBtn.addEventListener('click', () => {
+      if (isFinite(bgm.duration)) bgm.currentTime = bgm.duration;
+    });
+    bgm.addEventListener('ended', () => playBtn.classList.remove('playing'));
+
+    /* ===== 아코디언 토글 ===== */
+    const voiceToggle = document.getElementById('voiceToggle');
+    const voicePanel = document.getElementById('voicePanel');
+
+    voiceToggle.addEventListener('click', () => {
+      const isOpen = voiceToggle.classList.toggle('open');
+      voicePanel.classList.toggle('open');
+      voiceToggle.setAttribute('aria-expanded', isOpen);
+    });
+
+    /* ===== 캐릭터 보이스 (공용 오디오 사용) =====
+       한 번에 하나만 재생 — 다른 카드 누르면 이전 건 자동 정지 */
+    const voiceAudio = document.getElementById('voiceAudio');
+    const voiceButtons = document.querySelectorAll('.voice-play');
+    let currentVoiceBtn = null;
+
+    function stopCurrentVoice() {
+      if (currentVoiceBtn) {
+        currentVoiceBtn.classList.remove('playing');
+        currentVoiceBtn = null;
+      }
+      voiceAudio.pause();
+      voiceAudio.currentTime = 0;
+    }
+
+    voiceButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const src = btn.dataset.src;
+
+        // 같은 버튼 다시 누르면 정지
+        if (currentVoiceBtn === btn) {
+          stopCurrentVoice();
+          return;
+        }
+
+        // 다른 보이스가 재생 중이면 정지하고 새로 재생
+        stopCurrentVoice();
+
+        voiceAudio.src = src;
+        voiceAudio.play().then(() => {
+          btn.classList.add('playing');
+          currentVoiceBtn = btn;
+        }).catch(err => console.error('보이스 재생 실패:', err));
+      });
+    });
+
+    // 보이스 끝까지 재생되면 아이콘 원복
+    voiceAudio.addEventListener('ended', () => {
+      if (currentVoiceBtn) {
+        currentVoiceBtn.classList.remove('playing');
+        currentVoiceBtn = null;
+      }
+    });
+  </script>
+
+</body>
+</html>
